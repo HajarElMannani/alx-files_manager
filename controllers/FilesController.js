@@ -6,9 +6,12 @@ import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
 class FilesController {
+    const baseDir = (process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length
+          ? process.env.FOLDER_PATH.trim()
+          : '/tmp/files_manager', {recursive: true});
   static async postUpload (req, res) {
     try {
-      const token = req.('X-Token');
+      const token = req.header('X-Token');
       const userId = token && (await redisClient.get(`auth_${token}`));
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized'});
@@ -31,6 +34,7 @@ class FilesController {
       if (type !== 'folder' && ! data) {
         return res.status(400).json({ error: 'Missing data' });
       }
+	let parentIdForDb = parentId;
       if (parentId !== 0) {
         let parentDocument;
         try {
@@ -43,7 +47,7 @@ class FilesController {
         if (!parentDocument || parentDocument.type !== 'folder') {
           return res.status(400).json({ error: 'parent not found' });
         }
-        parentId = parentDocument._id;
+        parentIdForDb = parentDocument._id;
       }
       if (type === 'folder') {
         const doc = {
@@ -63,16 +67,12 @@ class FilesController {
           parentId: parentIdForDB
         });
       }
-      await promises.mkdir(process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length
-                           ? process.env.FOLDER_PATH.trim()
-                           : '/tmp/files_manager', {recursive: true});
+      await promises.mkdir(baseDir, {recursive: true});
       const nameLocal = v4();
-      const path = path.join(process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length
-                             ? process.env.FOLDER_PATH.trim()
-                             : '/tmp/files_manager', nameLocal);
-      await promises.writeFile(path, Buffer.frm(data, 'base64'));
+      const path = path.join(baseDir, nameLocal);
+      await promises.writeFile(path, Buffer.from(data, 'base64'));
       const doc = {
-        userId = userObjectId,
+          userId: userObjectId,
         name,
         type,
         isPublic,
@@ -81,12 +81,12 @@ class FilesController {
       };
       const result = await dbClient.db.collection('files').insertOne(doc);
       return res.status(201).json({
-        id: result.insertId.toString(),
+        id: result.insertedId.toString(),
         userId,
         name,
         type,
         isPublic,
-        parentId: prentId,
+        parentId: prentIdForDb,
       });
     } catch (err) {
       console.error('postUpload error:', err);
