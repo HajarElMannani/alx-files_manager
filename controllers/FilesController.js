@@ -1,15 +1,14 @@
 import { promises } from 'fs';
 import path from 'path';
 import { v4 } from 'uuid';
-import {ObjectId} from 'mongodb';
-import redisClient from '../utils/redis';
-import dbClient from '../utils/db';
+import pkg from 'mongodb';
+import redisClient from '../utils/redis.js';
+import dbClient from '../utils/db.js';
 
+const {ObjectId} = pkg;
 class FilesController {
-    const baseDir = (process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length
-          ? process.env.FOLDER_PATH.trim()
-          : '/tmp/files_manager', {recursive: true});
   static async postUpload (req, res) {
+	  const baseDir = (process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length ? process.env.FOLDER_PATH.trim() : '/tmp/files_manager', {recursive: true}); 
     try {
       const token = req.header('X-Token');
       const userId = token && (await redisClient.get(`auth_${token}`));
@@ -55,29 +54,29 @@ class FilesController {
           name,
           type,
           isPublic,
-          parentId: parentIdForDB
+          parentId: parentIdForDb,
         };
         const result = await dbClient.db.collection('files').insertOne(doc);
         return res.status(201).json({
-          id: result.insertId.toString(),
+          id: result.insertedId.toString(),
           userId,
           name,
           type,
           isPublic,
-          parentId: parentIdForDB
+          parentId: parentIdForDb
         });
       }
       await promises.mkdir(baseDir, {recursive: true});
       const nameLocal = v4();
-      const path = path.join(baseDir, nameLocal);
-      await promises.writeFile(path, Buffer.from(data, 'base64'));
+      const filePath = path.join(baseDir, nameLocal);
+      await promises.writeFile(filePath, Buffer.from(data, 'base64'));
       const doc = {
-          userId: userObjectId,
+        userId: userObjectId,
         name,
         type,
         isPublic,
-        parentId: parentId,
-        path
+        parentId: parentIdForDb,
+        path: filePath
       };
       const result = await dbClient.db.collection('files').insertOne(doc);
       return res.status(201).json({
@@ -90,7 +89,7 @@ class FilesController {
       });
     } catch (err) {
       console.error('postUpload error:', err);
-      return res.status(500).json({ error: 'internal Server Error' });
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }

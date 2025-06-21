@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import redisClient from '../utils/redis';
-import dbClient from '../utils/db';
+import redisClient from '../utils/redis.js';
+import dbClient from '../utils/db.js';
 
 class UsersController {
   static async postNew (req, res) {
