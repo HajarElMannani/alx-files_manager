@@ -43,8 +43,11 @@ class FilesController {
         } catch (e) {
           return res.status(400).json({ error: 'parent not found' });
         }
-        if (!parentDocument || parentDocument.type !== 'folder') {
-          return res.status(400).json({ error: 'parent not found' });
+        if (!parentDocument) {
+          return res.status(400).json({ error: 'Parent not found' });
+        }
+        if (parentDocument.type !== 'folder') {
+          return res.status(400).json({ error: 'Parent is not a folder' });
         }
         parentIdForDb = parentDocument._id;
       }
