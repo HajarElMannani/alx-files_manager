@@ -8,7 +8,7 @@ import dbClient from '../utils/db.js';
 const {ObjectId} = pkg;
 class FilesController {
   static async postUpload (req, res) {
-	  const baseDir = (process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim().length ? process.env.FOLDER_PATH.trim() : '/tmp/files_manager', {recursive: true}); 
+    const baseDir = process.env.FOLDER_PATH?.trim() || '/tmp/files_manager';
     try {
       const token = req.header('X-Token');
       const userId = token && (await redisClient.get(`auth_${token}`));
@@ -33,7 +33,7 @@ class FilesController {
       if (type !== 'folder' && ! data) {
         return res.status(400).json({ error: 'Missing data' });
       }
-	let parentIdForDb = parentId;
+	    let parentIdForDb = parentId;
       if (parentId !== 0) {
         let parentDocument;
         try {
@@ -76,7 +76,7 @@ class FilesController {
         type,
         isPublic,
         parentId: parentIdForDb,
-        path: filePath
+        localPath: filePath
       };
       const result = await dbClient.db.collection('files').insertOne(doc);
       return res.status(201).json({
@@ -85,7 +85,7 @@ class FilesController {
         name,
         type,
         isPublic,
-        parentId: prentIdForDb,
+        parentId: parentIdForDb,
       });
     } catch (err) {
       console.error('postUpload error:', err);
