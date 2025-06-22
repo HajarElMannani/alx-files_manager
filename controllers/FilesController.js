@@ -113,8 +113,12 @@ class FilesController {
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
     }
-    const { _id, localPath, ...rest } = file;
-    return res.status(200).json({ id: _id.toString(), ...rest });
+    const { _id, localPath, userId, parentId, ...others } = file;
+    return res.status(200).json({ id: _id.toString(),
+                                  userId: userId.toString(),
+                                  parentId: typeof parentId
+                                  ...others,
+                                });
   }
   static async getIndex (req, res) {
     const token = req.header('X-Token');
@@ -142,8 +146,10 @@ class FilesController {
             { $limit: pageSize },
           ]);
     const docs = await cursor.toArray();
-    const out = docs.map(({ _id, localPath, ...rest }) => ({
+    const out = docs.map(({ _id, localPath, userId, parentId, ...rest }) => ({
       id: _id.toString(),
+      userId: userId.toString(),
+      parentId: typeof parentId
       ...rest,
     }));
     return res.status(200).json(out);
