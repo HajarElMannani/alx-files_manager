@@ -154,6 +154,40 @@ class FilesController {
     }));
     return res.status(200).json(out);
   }
+  static async toggleVisibility(req, res, makePublic) {
+    const token = req.header('X-Token');
+    const uid = token && await redisClient.get(`auth_${token}`);
+    if (!uid) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    let docId;
+    try {
+      docId = ObjectId(req.params.id);
+    } catch {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const file = await dbClient.db.collection('files').findOneAndUpdate(
+      { _id: docId, userId: ObjectId(uid) },
+      { $set: { isPublic: makePublic } },
+      { returnDocument: 'after' }
+    ).then(r => r.value);
+    if (!file) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const { _id, localPath, userId, parentId, ...rest } = file;
+    return res.status(200).json({
+      id: _id.toString(),
+      userId: userId.toString(),
+      parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
+      isPublic: file.isPublic,
+      ...rest,
+    });
+  }
+  static async putPublish (req, res) {
+    return this.toggleVisibility(req, res, true);
+  }
+  static async putUnpublish (req, res) {
+    return this.toggleVisibility(req, res, false);
+  }
 }
 export default FilesController;
-
