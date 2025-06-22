@@ -8,7 +8,8 @@ import dbClient from '../utils/db.js';
 const {ObjectId} = pkg;
 class FilesController {
   static async postUpload (req, res) {
-    const baseDir = process.env.FOLDER_PATH?.trim() || '/tmp/files_manager';
+    const envPath = process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim();
+    const baseDir = envPath && envPath.length ? envPath : '/tmp/files_manager';
     try {
       const token = req.header('X-Token');
       const userId = token && (await redisClient.get(`auth_${token}`));
