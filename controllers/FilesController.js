@@ -63,12 +63,6 @@ class FilesController {
           parentId: parentIdForDb,
         };
         const result = await dbClient.db.collection('files').insertOne(doc);
-        if (type === 'image') {
-          fileQueue.add({
-            userId: userId,
-            fileId: result.insertedId.toString()
-          });
-        }
         return res.status(201).json({
           id: result.insertedId.toString(),
           userId,
@@ -90,8 +84,13 @@ class FilesController {
         parentId: parentIdForDb,
         localPath: filePath
       };
-      
       const result = await dbClient.db.collection('files').insertOne(doc);
+      if (type === 'image') {
+        fileQueue.add({
+          userId: userId,
+          fileId: result.insertedId.toString()
+        });
+      }   
       return res.status(201).json({
         id: result.insertedId.toString(),
         userId,

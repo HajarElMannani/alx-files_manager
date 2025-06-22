@@ -1,7 +1,7 @@
 import { promises } from 'fs';
 import imageThumbnail from 'image-thumbnail';
 import mime from 'mime-types';
-import fileQueue from './utils/queue.js';
+import fileQueue from './utils/bqueue.js';
 import dbClient from './utils/db.js';
 import pkg from 'mongodb';
 
