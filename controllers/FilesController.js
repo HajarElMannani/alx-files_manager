@@ -169,7 +169,7 @@ class FilesController {
     const file = await dbClient.db.collection('files').findOneAndUpdate(
       { _id: docId, userId: ObjectId(uid) },
       { $set: { isPublic: makePublic } },
-      { returnDocument: 'after' }
+      { returnOriginal: false }
     ).then(r => r.value);
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
