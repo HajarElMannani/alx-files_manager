@@ -116,7 +116,7 @@ class FilesController {
     const { _id, localPath, userId, parentId, ...others } = file;
     return res.status(200).json({ id: _id.toString(),
                                   userId: userId.toString(),
-                                  parentId: typeof parentId
+                                  parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
                                   ...others,
                                 });
   }
@@ -149,7 +149,7 @@ class FilesController {
     const out = docs.map(({ _id, localPath, userId, parentId, ...rest }) => ({
       id: _id.toString(),
       userId: userId.toString(),
-      parentId: typeof parentId
+      parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
       ...rest,
     }));
     return res.status(200).json(out);
