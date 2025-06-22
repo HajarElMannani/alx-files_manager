@@ -7,7 +7,7 @@ import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 import fileQueue from '../utils/bqueue';
 
-const {ObjectId} = pkg;
+const { ObjectId } = pkg;
 class FilesController {
   static async postUpload(req, res) {
     const envPath = process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim();
@@ -16,7 +16,7 @@ class FilesController {
       const token = req.header('X-Token');
       const userId = token && (await redisClient.get(`auth_${token}`));
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized'});
+        return res.status(401).json({ error: 'Unauthorized' });
       }
       const userObjectId = ObjectId(userId);
       const {
@@ -33,10 +33,10 @@ class FilesController {
       if (!type || !valid.includes(type)) {
         return res.status(400).json({ error: 'Missing type' });
       }
-      if (type !== 'folder' && ! data) {
+      if (type !== 'folder' && !data) {
         return res.status(400).json({ error: 'Missing data' });
       }
-	    let parentIdForDb = parentId;
+      let parentIdForDb = parentId;
       if (parentId !== 0) {
         let parentDocument;
         try {
@@ -72,7 +72,7 @@ class FilesController {
           parentId: parentIdForDb,
         });
       }
-      await promises.mkdir(baseDir, {recursive: true});
+      await promises.mkdir(baseDir, { recursive: true });
       const nameLocal = v4();
       const filePath = path.join(baseDir, nameLocal);
       await promises.writeFile(filePath, Buffer.from(data, 'base64'));
@@ -87,10 +87,10 @@ class FilesController {
       const result = await dbClient.db.collection('files').insertOne(doc);
       if (type === 'image') {
         fileQueue.add({
-          userId: userId,
-          fileId: result.insertedId.toString()
+          userId,
+          fileId: result.insertedId.toString(),
         });
-      }   
+      }
       return res.status(201).json({
         id: result.insertedId.toString(),
         userId,
@@ -114,23 +114,30 @@ class FilesController {
     let docId;
     try {
       docId = ObjectId(req.params.id);
-    } catch {
+    } catch (e) {
       return res.status(404).json({ error: 'Not found' });
     }
     const file = await dbClient.db.collection('files')
-          .findOne({
-            _id: docId,
-            userId: ObjectId(uid),
-          });
+      .findOne({
+        _id: docId,
+        userId: ObjectId(uid),
+      });
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
     }
-    const { _id, localPath, userId, parentId, ...others } = file;
-    return res.status(200).json({ id: _id.toString(),
-                                  userId: userId.toString(),
-                                  parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
-                                  ...others,
-                                });
+    const {
+      _id,
+      localPath,
+      userId,
+      parentId,
+      ...others
+    } = file;
+    return res.status(200).json({
+      id: _id.toString(),
+      userId: userId.toString(),
+      parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
+      ...others,
+    });
   }
 
   static async getIndex(req, res) {
@@ -146,20 +153,26 @@ class FilesController {
     if (parentId !== '0') {
       try {
         match.parentId = ObjectId(parentId);
-      } catch {
+      } catch (e) {
         match.parentId = new ObjectId();
       }
     } else {
       match.parentId = 0;
     }
     const cursor = dbClient.db.collection('files')
-          .aggregate([
-            { $match: match },
-            { $skip: page * pageSize },
-            { $limit: pageSize },
-          ]);
+      .aggregate([
+        { $match: match },
+        { $skip: page * pageSize },
+        { $limit: pageSize },
+      ]);
     const docs = await cursor.toArray();
-    const out = docs.map(({ _id, localPath, userId, parentId, ...rest }) => ({
+    const out = docs.map(({
+      _id,
+      localPath,
+      userId,
+      parentId,
+      ...rest
+    }) => ({
       id: _id.toString(),
       userId: userId.toString(),
       parentId: typeof parentId === 'object' ? parentId.toString() : parentId,
@@ -177,18 +190,24 @@ class FilesController {
     let docId;
     try {
       docId = ObjectId(req.params.id);
-    } catch {
+    } catch (e) {
       return res.status(404).json({ error: 'Not found' });
     }
     const file = await dbClient.db.collection('files').findOneAndUpdate(
       { _id: docId, userId: ObjectId(uid) },
       { $set: { isPublic: makePublic } },
-      { returnOriginal: false }
-    ).then(r => r.value);
+      { returnOriginal: false },
+    ).then((r) => r.value);
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
     }
-    const { _id, localPath, userId, parentId, ...rest } = file;
+    const {
+      _id,
+      localPath,
+      userId,
+      parentId,
+      ...rest
+    } = file;
     return res.status(200).json({
       id: _id.toString(),
       userId: userId.toString(),
@@ -211,16 +230,17 @@ class FilesController {
       let id;
       try {
         id = ObjectId(req.params.id);
-      } catch {
+      } catch (e) {
         return null;
       }
       const token = req.header('X-Token');
       const uid = token && await redisClient.get(`auth_${token}`);
       const match = uid
-            ? {
-              _id: id,
-              $or: [ { isPublic: true }, { userId: ObjectId(uid) } ] }
-            : { _id: id, isPublic: true };
+        ? {
+          _id: id,
+          $or: [{ isPublic: true }, { userId: ObjectId(uid) }],
+        }
+        : { _id: id, isPublic: true };
       return dbClient.db.collection('files').findOne(match);
     })();
     if (!file) {
@@ -229,7 +249,7 @@ class FilesController {
     if (file.type === 'folder') {
       return res.status(400).json({ error: "A folder doesn't have content" });
     }
-    const size = req.query.size;
+    const { size } = req.query.size;
     if (size && !['100', '250', '500'].includes(size)) {
       return res.status(400).json({ error: 'Invalid size' });
     }
@@ -239,7 +259,7 @@ class FilesController {
       const mimeType = mime.lookup(file.name) || 'application/octet-stream';
       res.setHeader('Content-Type', mimeType);
       return res.status(200).send(data);
-    } catch {
+    } catch (e) {
       return res.status(404).json({ error: 'Not found' });
     }
   }
