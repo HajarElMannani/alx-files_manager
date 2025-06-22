@@ -184,10 +184,10 @@ class FilesController {
     });
   }
   static async putPublish (req, res) {
-    return this.toggleVisibility(req, res, true);
+    return FilesController.toggleVisibility(req, res, true);
   }
   static async putUnpublish (req, res) {
-    return this.toggleVisibility(req, res, false);
+    return FilesController.toggleVisibility(req, res, false);
   }
 }
 export default FilesController;
