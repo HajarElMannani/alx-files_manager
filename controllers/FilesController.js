@@ -3,13 +3,13 @@ import mime from 'mime-types';
 import path from 'path';
 import { v4 } from 'uuid';
 import pkg from 'mongodb';
-import redisClient from '../utils/redis.js';
-import dbClient from '../utils/db.js';
-import fileQueue from '../utils/bqueue.js';
+import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
+import fileQueue from '../utils/bqueue';
 
 const {ObjectId} = pkg;
 class FilesController {
-  static async postUpload (req, res) {
+  static async postUpload(req, res) {
     const envPath = process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim();
     const baseDir = envPath && envPath.length ? envPath : '/tmp/files_manager';
     try {
@@ -24,7 +24,7 @@ class FilesController {
         type,
         parentId = 0,
         isPublic = false,
-        data
+        data,
       } = req.body || {};
       if (!name) {
         return res.status(400).json({ error: 'Missing name' });
@@ -69,7 +69,7 @@ class FilesController {
           name,
           type,
           isPublic,
-          parentId: parentIdForDb
+          parentId: parentIdForDb,
         });
       }
       await promises.mkdir(baseDir, {recursive: true});
@@ -82,7 +82,7 @@ class FilesController {
         type,
         isPublic,
         parentId: parentIdForDb,
-        localPath: filePath
+        localPath: filePath,
       };
       const result = await dbClient.db.collection('files').insertOne(doc);
       if (type === 'image') {
@@ -104,7 +104,8 @@ class FilesController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
-  static async getShow (req, res) {
+
+  static async getShow(req, res) {
     const token = req.header('X-Token');
     const uid = token && await redisClient.get(`auth_${token}`);
     if (!uid) {
@@ -117,7 +118,10 @@ class FilesController {
       return res.status(404).json({ error: 'Not found' });
     }
     const file = await dbClient.db.collection('files')
-          .findOne({ _id: docId, userId: ObjectId(uid) });
+          .findOne({
+            _id: docId,
+            userId: ObjectId(uid),
+          });
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
     }
@@ -128,7 +132,8 @@ class FilesController {
                                   ...others,
                                 });
   }
-  static async getIndex (req, res) {
+
+  static async getIndex(req, res) {
     const token = req.header('X-Token');
     const uid = token && await redisClient.get(`auth_${token}`);
     if (!uid) {
@@ -162,6 +167,7 @@ class FilesController {
     }));
     return res.status(200).json(out);
   }
+
   static async toggleVisibility(req, res, makePublic) {
     const token = req.header('X-Token');
     const uid = token && await redisClient.get(`auth_${token}`);
@@ -191,13 +197,16 @@ class FilesController {
       ...rest,
     });
   }
-  static async putPublish (req, res) {
+
+  static async putPublish(req, res) {
     return FilesController.toggleVisibility(req, res, true);
   }
-  static async putUnpublish (req, res) {
+
+  static async putUnpublish(req, res) {
     return FilesController.toggleVisibility(req, res, false);
   }
-  static async getFile (req, res) {
+
+  static async getFile(req, res) {
     const file = await (async () => {
       let id;
       try {
@@ -208,7 +217,9 @@ class FilesController {
       const token = req.header('X-Token');
       const uid = token && await redisClient.get(`auth_${token}`);
       const match = uid
-            ? { _id: id, $or: [ { isPublic: true }, { userId: ObjectId(uid) } ] }
+            ? {
+              _id: id,
+              $or: [ { isPublic: true }, { userId: ObjectId(uid) } ] }
             : { _id: id, isPublic: true };
       return dbClient.db.collection('files').findOne(match);
     })();
