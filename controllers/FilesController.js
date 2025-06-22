@@ -5,6 +5,7 @@ import { v4 } from 'uuid';
 import pkg from 'mongodb';
 import redisClient from '../utils/redis.js';
 import dbClient from '../utils/db.js';
+import fileQueue from '../utils/bqueue.js';
 
 const {ObjectId} = pkg;
 class FilesController {
@@ -62,6 +63,12 @@ class FilesController {
           parentId: parentIdForDb,
         };
         const result = await dbClient.db.collection('files').insertOne(doc);
+        if (type === 'image') {
+          fileQueue.add({
+            userId: userId,
+            fileId: result.insertedId.toString()
+          });
+        }
         return res.status(201).json({
           id: result.insertedId.toString(),
           userId,
@@ -83,6 +90,7 @@ class FilesController {
         parentId: parentIdForDb,
         localPath: filePath
       };
+      
       const result = await dbClient.db.collection('files').insertOne(doc);
       return res.status(201).json({
         id: result.insertedId.toString(),
@@ -211,8 +219,13 @@ class FilesController {
     if (file.type === 'folder') {
       return res.status(400).json({ error: "A folder doesn't have content" });
     }
+    const size = req.query.size;
+    if (size && !['100', '250', '500'].includes(size)) {
+      return res.status(400).json({ error: 'Invalid size' });
+    }
+    const wantedPath = size ? `${file.localPath}_${size}` : file.localPath;
     try {
-      const data = await promises.readFile(file.localPath || file.path);
+      const data = await promises.readFile(wantedPath);
       const mimeType = mime.lookup(file.name) || 'application/octet-stream';
       res.setHeader('Content-Type', mimeType);
       return res.status(200).send(data);
