@@ -42,7 +42,7 @@ class FilesController {
             .collection('files')
             .findOne({ _id: ObjectId(parentId) });
         } catch (e) {
-          return res.status(400).json({ error: 'parent not found' });
+          return res.status(400).json({ error: 'Parent not found' });
         }
         if (!parentDocument) {
           return res.status(400).json({ error: 'Parent not found' });
@@ -130,6 +130,7 @@ class FilesController {
       try {
         match.parentId = ObjectId(parentId);
       } catch {
+        match.parentId = new ObjectId();
       }
     } else {
       match.parentId = 0;
