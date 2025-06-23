@@ -21,6 +21,9 @@ class UsersController {
     const result = await dbClient.db
       .collection('users')
       .insertOne({ email, password: hashed });
+    import('../utils/bqueue.js').then(({ default: fileQueue }) => {
+      fileQueue.add({ userId: result.insertedId.toString() });
+    });
     return res.status(201).json({
       id: result.insertedId.toString(),
       email,
