@@ -1,0 +1,13 @@
+describe('POST /files', () => {
+  let token;
+  beforeAll(async () => { token = (await registerAndLogin()).token; });
+
+  test('upload text file OK', async () => {
+    const res = await request(app)
+          .post('/files')
+          .set('X-Token', token)
+          .send({ name: 'a.txt', type: 'file', data: Buffer.from('hi').toString('base64') });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ name: 'a.txt', type: 'file' });
+  });
+});
