@@ -1,3 +1,4 @@
+import { MongoClient } from 'mongodb';
 import redisMock from 'redis-mock';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import dbClient from '../../utils/db.js';
@@ -14,10 +15,7 @@ export async function initMemoryMongo() {
   const mongo = await MongoMemoryServer.create();
   const uri = mongo.getUri();
 
-  dbClient.client = new dbClient.constructor().client;
-  dbClient.client = new dbClient.constructor().client.constructor(uri, {
-    useUnifiedTopology: true,
-  });
+  dbClient.client = new MongoClient(uri, { useUnifiedTopology: true });
   await dbClient.client.connect();
   dbClient.db = dbClient.client.db(await mongo.getDbName());
   return mongo;
