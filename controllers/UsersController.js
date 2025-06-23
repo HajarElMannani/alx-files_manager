@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import pkg from 'mongodb';
-import fileQueue  from '../utils/bqueue'; 
+import fileQueue from '../utils/bqueue';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
