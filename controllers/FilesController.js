@@ -249,7 +249,7 @@ class FilesController {
     if (file.type === 'folder') {
       return res.status(400).json({ error: "A folder doesn't have content" });
     }
-    const { size } = req.query.size;
+    const { size } = req.query;
     if (size && !['100', '250', '500'].includes(size)) {
       return res.status(400).json({ error: 'Invalid size' });
     }
